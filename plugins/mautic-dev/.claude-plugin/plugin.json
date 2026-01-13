@@ -1,0 +1,8 @@
+{
+  "name": "mautic-dev",
+  "description": "Development toolkit for Mautic - bundles, database, API, testing",
+  "version": "0.1.0",
+  "author": {
+    "name": "kuzmany"
+  }
+}

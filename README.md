@@ -1,56 +1,53 @@
 # Mautic Claude Code Plugins
 
-A collection of Claude Code plugins for developing with Mautic - the open-source marketing automation platform.
+Claude Code plugin marketplace for Mautic development workflows.
 
-## Available Plugins
+**Repository:** https://github.com/kuzmany/mautic-claude-code-plugins
 
-| Plugin | Version | Description |
-|--------|---------|-------------|
-| [mautic](./plugins/mautic) | 0.1.0 | Comprehensive skills for Mautic development |
+---
 
 ## Installation
 
-### Quick Install
+### Full Marketplace (Recommended)
 
 ```bash
-claude plugin add --path plugins/mautic https://github.com/kuzmany/mautic-claude-code-plugins
+/plugin marketplace add kuzmany/mautic-claude-code-plugins
 ```
 
-### Manual Install
+> **IMPORTANT:** After adding the marketplace, go to `/plugins` and enable all plugins. Enable auto update to keep plugins up to date.
+
+### Individual Plugins
+
+Install only the plugins you need:
 
 ```bash
-git clone https://github.com/kuzmany/mautic-claude-code-plugins.git
-claude plugin add ./mautic-claude-code-plugins/plugins/mautic
+# Development toolkit (bundles, database, API, testing)
+/plugin add kuzmany/mautic-claude-code-plugins --plugin mautic-dev
+
+# Design toolkit (UI components, styling, frontend)
+/plugin add kuzmany/mautic-claude-code-plugins --plugin mautic-design
 ```
 
-## Skills Overview
+---
 
-The **mautic** plugin provides specialized knowledge for:
+## Plugins
 
-| Skill | Status | Description |
-|-------|--------|-------------|
-| `mautic-design` | Planned | UI components, CSS variables, Twig templates, theming |
-| `mautic-javascript` | Planned | mQuery, AJAX patterns, OnLoad lifecycle, events |
-| `mautic-database` | Planned | Doctrine entities, migrations, repositories |
-| `mautic-api` | Planned | REST API endpoints, webhooks, authentication |
-| `mautic-bundles` | Planned | Bundle architecture, services, dependency injection |
-| `mautic-forms` | Planned | Symfony form types, validation, custom fields |
-| `mautic-testing` | Planned | PHPUnit, Codeception, fixtures, test patterns |
+### mautic-dev
 
-## Requirements
+Development toolkit for Mautic - bundles, database, API, testing.
 
-- [Claude Code](https://claude.ai/code) CLI installed
-- Mautic 5.x or 7.x codebase
+**Status:** Under development
 
-## Contributing
+---
 
-Contributions welcome! Please read the contribution guidelines before submitting PRs.
+### mautic-design
+
+UI/UX design toolkit for Mautic - components, styling, frontend.
+
+**Status:** Under development
+
+---
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
-
-## Related
-
-- [Mautic](https://github.com/mautic/mautic) - Open-source marketing automation
-- [Claude Code](https://claude.ai/code) - AI-powered coding assistant
+MIT

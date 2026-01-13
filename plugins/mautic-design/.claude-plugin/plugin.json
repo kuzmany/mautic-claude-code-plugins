@@ -1,0 +1,8 @@
+{
+  "name": "mautic-design",
+  "description": "UI/UX design toolkit for Mautic - components, styling, frontend",
+  "version": "0.1.0",
+  "author": {
+    "name": "kuzmany"
+  }
+}

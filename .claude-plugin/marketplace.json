@@ -1,0 +1,54 @@
+{
+  "name": "mautic-claude-plugin",
+  "owner": {
+    "name": "kuzmany",
+    "email": "kuzmany@users.noreply.github.com"
+  },
+  "metadata": {
+    "description": "Claude Code plugins for Mautic development workflows",
+    "version": "0.1.0",
+    "pluginRoot": "./plugins"
+  },
+  "plugins": [
+    {
+      "name": "mautic-dev",
+      "source": "./plugins/mautic-dev",
+      "description": "Development toolkit for Mautic - bundles, database, API, testing",
+      "version": "0.1.0",
+      "author": {
+        "name": "kuzmany"
+      },
+      "repository": "https://github.com/kuzmany/mautic-claude-code-plugins",
+      "license": "MIT",
+      "keywords": [
+        "mautic",
+        "development",
+        "bundles",
+        "database",
+        "api",
+        "testing"
+      ],
+      "category": "development"
+    },
+    {
+      "name": "mautic-design",
+      "source": "./plugins/mautic-design",
+      "description": "UI/UX design toolkit for Mautic - components, styling, frontend",
+      "version": "0.1.0",
+      "author": {
+        "name": "kuzmany"
+      },
+      "repository": "https://github.com/kuzmany/mautic-claude-code-plugins",
+      "license": "MIT",
+      "keywords": [
+        "mautic",
+        "design",
+        "ui",
+        "frontend",
+        "components",
+        "styling"
+      ],
+      "category": "design"
+    }
+  ]
+}
