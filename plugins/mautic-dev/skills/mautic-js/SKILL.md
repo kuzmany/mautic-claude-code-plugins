@@ -1,405 +1,198 @@
 ---
-name: mautic-js
-description: This skill should be used when the user asks to "write JavaScript for Mautic", "create JS functionality", "add client-side behavior", "implement AJAX calls in Mautic", "add keyboard shortcuts", "work with mQuery", "create OnLoad functions", or needs guidance on Mautic's JavaScript patterns, conventions, and best practices.
-version: 0.1.0
+name: Mautic JavaScript Development
+description: This skill should be used when the user asks to "write Mautic JavaScript", "create bundle JS", "add JavaScript to plugin", "mQuery", "Mautic.ajaxActionRequest", "bundle OnLoad", "OnLoad function", "chosen select", "Mautic modal", "loading indicator". Provides guide for writing JavaScript in Mautic bundles and plugins.
+version: 1.1.0
 ---
 
 # Mautic JavaScript Development
 
-This skill provides guidance for writing JavaScript code in the Mautic application following established patterns and conventions.
+## File Location
 
-## Core Concepts
+Add JavaScript to the **main JS file** of your bundle/plugin (autoloaded by Mautic):
 
-### Global Objects
+```
+# Bundles
+app/bundles/{BundleName}/Assets/js/{bundlename}.js
 
-Mautic uses two global objects for JavaScript:
-
-- **`Mautic`** - Main namespace for all bundle-specific functions
-- **`MauticVars`** - Storage for global state variables
-
-### jQuery with noConflict
-
-Mautic uses jQuery in noConflict mode aliased as `mQuery`:
-
-```javascript
-var mQuery = jQuery.noConflict(true);
-window.jQuery = mQuery;
+# Plugins
+plugins/{PluginName}/Assets/js/{pluginname}.js
 ```
 
-Always use `mQuery` instead of `$` or `jQuery` in Mautic code.
+Examples:
+- `app/bundles/EmailBundle/Assets/js/email.js`
+- `app/bundles/LeadBundle/Assets/js/lead.js`
+- `plugins/MauticFocusBundle/Assets/js/focus.js`
 
-### Icon Classes
+**Important:** Don't create separate JS files - add all code to the main bundle JS file.
 
-Mautic uses Remix Icons with `ri-` prefix:
+## Core Rules
+
+### 1. Always use mQuery (not $ or jQuery)
 
 ```javascript
-// Spinner
-'ri-loader-3-line ri-spin'
-
-// Common icons
-'ri-close-line'
-'ri-check-line'
-'ri-arrow-down-s-line'
-'ri-arrow-up-s-line'
-'ri-add-line'
-'ri-draggable'
+mQuery('#myElement').val();
+mQuery('.my-class').addClass('active');
 ```
 
-## Bundle JavaScript Pattern
-
-Each bundle's JavaScript file follows a consistent pattern with OnLoad and OnUnload functions.
-
-### OnLoad Functions
-
-OnLoad functions initialize bundle-specific functionality when content loads:
+### 2. Namespace functions under Mautic object
 
 ```javascript
-Mautic.emailOnLoad = function (container, response) {
-    // Initialize search autocomplete
+// Correct
+Mautic.myBundleOnLoad = function(container, response) { };
+Mautic.myCustomFunction = function() { };
+
+// Wrong - never do this
+function myFunction() { }
+```
+
+## OnLoad Pattern (Required)
+
+Every bundle JS file needs an OnLoad function. Name follows: `Mautic.{bundleName}OnLoad`
+
+```javascript
+// File: MyBundle/Assets/js/mybundle.js
+Mautic.mybundleOnLoad = function(container, response) {
+    // container = '#app-content' (loaded content selector)
+    // response = server response data
+
+    // Initialize search if on list page
     if (mQuery(container + ' #list-search').length) {
-        Mautic.activateSearchAutocomplete('list-search', 'email');
+        Mautic.activateSearchAutocomplete('list-search', 'mybundle.entity');
     }
 
-    // Initialize bundle-specific functionality
-    Mautic.initEmailDynamicContent();
+    // Initialize your components
+    mQuery('#myButton').on('click.mybundle', function() {
+        // Handle click
+    });
 };
 ```
 
-**Parameters:**
-- `container` - CSS selector for the content container (usually `'#app-content'`)
-- `response` - AJAX response object with optional data
-
-### OnUnload Functions
-
-OnUnload functions clean up when navigating away:
+### OnUnload (Cleanup)
 
 ```javascript
-Mautic.emailOnUnload = function(id) {
-    if (id === '#app-content') {
-        delete Mautic.listCompareChart;
-    }
-
-    // Clear moderated intervals
-    if (typeof MauticVars.moderatedIntervals['emailSendProgress'] != 'undefined') {
-        Mautic.clearModeratedInterval('emailSendProgress');
+Mautic.mybundleOnUnload = function(id) {
+    // Clear any intervals
+    if (typeof MauticVars.moderatedIntervals['myInterval'] != 'undefined') {
+        Mautic.clearModeratedInterval('myInterval');
     }
 };
 ```
 
 ## AJAX Requests
 
-### ajaxActionRequest
-
-Use for calling AjaxController actions:
+### ajaxActionRequest (Primary Method)
 
 ```javascript
-Mautic.ajaxActionRequest(
-    'lead:getLeadCount',           // action
-    {id: id},                       // data
-    function (response) {           // success callback
-        if (response.success) {
-            elem.html(response.html);
-        }
-    },
-    false,                          // showLoadingBar
-    true,                           // queue
-    "GET"                           // method (default: POST)
-);
-```
-
-### Standard jQuery AJAX
-
-For custom AJAX calls, use mQuery with Mautic patterns:
-
-```javascript
-mQuery.ajax({
-    showLoadingBar: true,
-    url: mauticAjaxUrl,
-    type: "POST",
-    data: query,
-    dataType: "json",
-    success: function (response) {
-        if (response.success) {
-            // Handle success
-        }
-        Mautic.stopPageLoadingBar();
-    },
-    error: function (request, textStatus, errorThrown) {
-        Mautic.processAjaxError(request, textStatus, errorThrown);
+// Simple request
+Mautic.ajaxActionRequest('mybundle:getData', {id: 123}, function(response) {
+    if (response.success) {
+        mQuery('#result').html(response.data);
     }
 });
+
+// With loading bar
+Mautic.ajaxActionRequest('mybundle:save', formData, function(response) {
+    // Handle response
+}, true);  // true = show loading bar
+
+// GET request
+Mautic.ajaxActionRequest('mybundle:fetch', {id: 1}, callback, false, false, "GET");
 ```
 
-### Global AJAX Variables
+## Common UI Patterns
 
-```javascript
-mauticAjaxUrl      // Base URL for AJAX requests
-mauticAjaxCsrf     // CSRF token (auto-added to POST requests)
-mauticContent      // Current content identifier
-mauticEnv          // Environment ('dev' or 'prod')
-mauticLang         // Translation strings object
-```
-
-## Loading Indicators
-
-### Page Loading Bar
+### Loading Indicators
 
 ```javascript
 Mautic.startPageLoadingBar();
 Mautic.stopPageLoadingBar();
-```
 
-### Button Loading Indicator
-
-```javascript
-Mautic.activateButtonLoadingIndicator(button);
-Mautic.removeButtonLoadingIndicator(button);
-```
-
-### Label Loading Indicator
-
-```javascript
-Mautic.activateLabelLoadingIndicator('elementId');
+// For field labels
+Mautic.activateLabelLoadingIndicator('field_id');
 Mautic.removeLabelLoadingIndicator();
 ```
 
-### Icon Spinning
+### Chosen Select (Dropdowns)
 
 ```javascript
-Mautic.startIconSpinOnEvent(event);
-Mautic.stopIconSpinPostEvent();
-```
+// Activate
+Mautic.activateChosenSelect('#mySelect');
 
-## Translations
+// Update after changing options
+mQuery('#mySelect').html(newOptions);
+mQuery('#mySelect').trigger('chosen:updated');
 
-Use `Mautic.translate()` for translatable strings:
-
-```javascript
-// Simple translation
-var message = Mautic.translate('mautic.core.error');
-
-// With parameters
-var message = Mautic.translate('mautic.lead.count', {count: 5});
-```
-
-Translations are defined in PHP and passed to JavaScript via `mauticLang` object.
-
-## Keyboard Shortcuts
-
-Use Mousetrap library via `Mautic.addKeyboardShortcut`:
-
-```javascript
-Mautic.addKeyboardShortcut(
-    'g d',                              // key sequence
-    'Load the Dashboard',               // description
-    function (e) {                      // callback
-        mQuery('#mautic_dashboard_index').click();
-    },
-    'global'                            // section (optional)
-);
-```
-
-Common shortcuts pattern:
-- `g <key>` - Go to section (g d = dashboard, g c = contacts)
-- `f <key>` - Feature toggle (f m = admin menu)
-- Single keys - Context actions (e = edit, c = create)
-
-## Moderated Intervals
-
-Prevent overlapping AJAX requests with moderated intervals:
-
-```javascript
-// Set interval
-Mautic.setModeratedInterval(
-    'uniqueKey',           // identifier
-    'callbackFunction',    // Mautic function name
-    5000,                  // timeout in ms
-    params                 // optional parameters
-);
-
-// Mark callback complete (call at end of callback)
-Mautic.moderatedIntervalCallbackIsComplete('uniqueKey');
-
-// Clear interval
-Mautic.clearModeratedInterval('uniqueKey');
-```
-
-## Flash Messages
-
-```javascript
-// Add error flash
-const flashMessage = Mautic.addFlashMessage('Error message');
-Mautic.setFlashes(flashMessage);
-
-// Add info flash
-const flashMessage = Mautic.addInfoFlashMessage('Info message');
-Mautic.setFlashes(flashMessage);
-
-// With auto-close disabled
-Mautic.setFlashes(flashMessage, false);
-```
-
-## Event Handling
-
-### Document Ready
-
-```javascript
-mQuery(document).ready(function() {
-    // Initialize on page load
-});
-```
-
-### Event Delegation
-
-```javascript
-mQuery(container).on('click', '.selector', function(e) {
-    e.preventDefault();
-    // Handle click
-});
-```
-
-### Form Events
-
-```javascript
-mQuery('#form').on('change', function() {
-    mQuery(this).submit();
-}).on('submit', function(e) {
-    e.preventDefault();
-    Mautic.refreshData(mQuery(this));
-});
-```
-
-## UI Components
-
-### Chosen Select
-
-```javascript
-Mautic.activateChosenSelect('#selectId');
-Mautic.destroyChosen(mQuery('#selectId'));
-
-// Trigger update after modifying options
-mQuery('#selectId').trigger('chosen:updated');
+// Destroy before replacing element
+Mautic.destroyChosen(mQuery('#mySelect'));
 ```
 
 ### Tooltips
 
 ```javascript
-mQuery('[data-toggle="tooltip"]').tooltip({html: true});
+mQuery('[data-toggle="tooltip"]').tooltip({html: true, container: 'body'});
+
+// Destroy before removing element
+mQuery('#element').tooltip('destroy');
 ```
 
-### Sortable Lists
+## Event Binding
+
+Always use namespaced events:
 
 ```javascript
-mQuery('#container').sortable({
-    items: '.sortable-item',
-    handle: '.ri-draggable',
-    axis: 'y',
-    stop: function(e, ui) {
-        // Handle reorder
-    }
+// Bind with namespace
+mQuery('#element').on('click.mybundle', handler);
+
+// Unbind by namespace (cleanup)
+mQuery('#element').off('.mybundle');
+
+// Prevent duplicates
+mQuery('#element').off('click.mybundle').on('click.mybundle', handler);
+```
+
+## Reinitialize After AJAX
+
+After injecting HTML via AJAX, reinitialize Mautic components:
+
+```javascript
+// Full reinitialization
+Mautic.onPageLoad('#container', response);
+
+// Or manually activate elements:
+mQuery('#newElement [data-toggle="tooltip"]').tooltip({html: true});
+mQuery('#newElement a[data-toggle="ajax"]').on('click', function(e) {
+    e.preventDefault();
+    return Mautic.ajaxifyLink(this, e);
+});
+mQuery('#newElement [data-toggle="ajaxmodal"]').on('click.ajaxmodal', function(e) {
+    e.preventDefault();
+    Mautic.ajaxifyModal(this, e);
 });
 ```
 
-### DateTimePicker
+## Plugin Actions
+
+For plugins, use format `plugin:bundlename:actionName`:
 
 ```javascript
-mQuery('#field').datetimepicker({
-    format: 'Y-m-d H:i',
-    lazyInit: true,
-    validateOnBlur: false,
-    allowBlank: true,
-    scrollMonth: false,
-    scrollInput: false
-});
+Mautic.ajaxActionRequest('plugin:myfocus:getData', {id: 1}, callback);
 ```
 
-## Common Patterns
+## Best Practices
 
-### Toggle Switch Pattern
+1. **Always check element exists**: `if (mQuery('#el').length) { }`
+2. **Use ajaxActionRequest** for backend calls
+3. **Handle errors**: `Mautic.processAjaxError(request, textStatus, errorThrown)`
+4. **Clean up in OnUnload** - intervals, events, state
+5. **Namespace all events** with bundle name
 
-```javascript
-Mautic.toggleLeadSwitch = function(toggleId, query, action) {
-    var toggleOn  = 'ri-toggle-fill text-success';
-    var toggleOff = 'ri-toggle-line text-danger';
-    var spinClass = 'ri-spin ri-loader-3-line ';
+## Global Variables
 
-    // Show spinner
-    mQuery('#' + toggleId).removeClass(toggleOn + ' ' + toggleOff)
-        .addClass(spinClass);
-
-    mQuery.ajax({
-        url: mauticAjaxUrl,
-        type: "POST",
-        data: query,
-        dataType: "json",
-        success: function (response) {
-            mQuery('#' + toggleId).removeClass(spinClass);
-            if (response.success) {
-                mQuery('#' + toggleId).addClass(
-                    action == 'add' ? toggleOn : toggleOff
-                );
-            }
-        }
-    });
-};
-```
-
-### Lazy Loading Pattern
-
-```javascript
-Mautic.lazyLoadContent = function() {
-    const container = mQuery('#container');
-    if (!container.length) return;
-
-    const targetUrl = container.data('target-url');
-    mQuery.get(targetUrl, function(response) {
-        response.target = '#container';
-        Mautic.processPageContent(response);
-    });
-};
-```
-
-### Filter Form Pattern
-
-```javascript
-var filterForm = mQuery('#filters');
-if (filterForm.length) {
-    filterForm.on('change', function() {
-        filterForm.submit();
-    }).on('keyup', function() {
-        filterForm.delay(200).submit();
-    }).on('submit', function(e) {
-        e.preventDefault();
-        Mautic.refreshContent(filterForm);
-    });
-}
-```
-
-## File Organization
-
-Bundle JavaScript files are located at:
-```
-app/bundles/{BundleName}/Assets/js/{bundle}.js
-```
-
-Core JavaScript is at:
-```
-app/bundles/CoreBundle/Assets/js/1.core.js
-```
+- `mauticAjaxUrl` - AJAX endpoint URL
+- `mauticBasePath` - Base path
+- `mauticLang` - Translation strings
 
 ## Additional Resources
 
-### Reference Files
-
-For detailed patterns and complete examples, consult:
-- **`references/ajax-patterns.md`** - Complete AJAX request patterns
-- **`references/ui-components.md`** - UI component initialization
-
-### Mautic Core Functions
-
-Essential functions available globally:
-- `Mautic.processPageContent(response)` - Process AJAX page response
-- `Mautic.activateSearchAutocomplete(id, bundle)` - Initialize search
-- `Mautic.makeModalsAlive(elements)` - Initialize modal triggers
-- `Mautic.makeLinksAlive(elements)` - Initialize AJAX links
-- `Mautic.dismissConfirmation()` - Close confirmation modal
+- **`references/ajax-patterns.md`** - Intervals, batch processing, forms
+- **`references/ui-components.md`** - Modals, sortables, date pickers

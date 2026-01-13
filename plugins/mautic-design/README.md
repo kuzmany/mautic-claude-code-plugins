@@ -2,9 +2,21 @@
 
 UI/UX design toolkit for Mautic - components, styling, frontend.
 
+## Skills
+
+### mautic-graphs
+Chart and graph implementation guide for Mautic. Covers:
+- Twig template usage (`@MauticCore/Helper/chart.html.twig`)
+- PHP chart helpers (LineChart, BarChart, PieChart)
+- Chart.js v2.9.4 integration
+- Default Mautic color palette
+- JavaScript rendering (`Mautic.renderCharts()`)
+
+**Trigger phrases:** "add chart", "create graph", "line chart", "bar chart", "pie chart", "dashboard widget chart", "renderCharts"
+
 ## Status
 
-This plugin is currently empty and under development.
+This plugin is under active development.
 
 ## Planned Features
 
