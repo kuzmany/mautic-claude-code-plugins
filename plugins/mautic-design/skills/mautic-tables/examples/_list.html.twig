@@ -1,0 +1,180 @@
+{#
+    Example: Partial list template (for AJAX reloading)
+    File: app/bundles/EntityBundle/Resources/views/Entity/_list.html.twig
+
+    This pattern is used when the list content needs to be reloaded independently
+    via AJAX. The main list.html.twig includes this partial.
+#}
+
+{% if items|length > 0 %}
+    <div class="table-responsive">
+        <table class="table table-hover entity-list" id="entityTable">
+            <thead>
+                <tr>
+                    {{ include('@MauticCore/Helper/tableheader.html.twig', {
+                        'checkall': 'true',
+                        'target': '#entityTable',
+                    }) }}
+
+                    {{ include('@MauticCore/Helper/tableheader.html.twig', {
+                        'sessionVar': 'entity',
+                        'orderBy': 'e.name',
+                        'text': 'mautic.core.name',
+                        'class': 'col-entity-name',
+                    }) }}
+
+                    {{ include('@MauticCore/Helper/tableheader.html.twig', {
+                        'sessionVar': 'entity',
+                        'orderBy': 'cat.title',
+                        'text': 'mautic.core.category',
+                        'class': 'visible-md visible-lg col-entity-category',
+                    }) }}
+
+                    {# Stats column - no sorting #}
+                    <th class="visible-sm visible-md visible-lg col-entity-stats">
+                        {{ 'mautic.core.stats'|trans }}
+                    </th>
+
+                    {{ include('@MauticCore/Helper/tableheader.html.twig', {
+                        'sessionVar': 'entity',
+                        'orderBy': 'e.dateModified',
+                        'defaultDir': 'DESC',
+                        'text': 'mautic.lead.import.label.dateModified',
+                        'class': 'visible-lg col-entity-dateModified',
+                        'default': true,
+                    }) }}
+
+                    {{ include('@MauticCore/Helper/tableheader.html.twig', {
+                        'sessionVar': 'entity',
+                        'orderBy': 'e.id',
+                        'text': 'mautic.core.id',
+                        'class': 'visible-md visible-lg col-entity-id',
+                    }) }}
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                    {% set mauticTemplateVars = _context|merge({'item': item}) %}
+                    <tr id="row_entity_{{ item.id }}">
+                        <td>
+                            {% set edit = securityHasEntityAccess(
+                                permissions['entity:entities:editown'],
+                                permissions['entity:entities:editother'],
+                                item.getCreatedBy()
+                            ) %}
+
+                            {# Custom action buttons #}
+                            {% set customButtons = [{
+                                'attr': {
+                                    'class': 'btn btn-ghost btn-sm btn-nospin',
+                                    'href': url('mautic_entity_preview', {'objectId': item.id}),
+                                    'target': '_blank',
+                                    'data-toggle': '',
+                                },
+                                'iconClass': 'ri-external-link-line',
+                                'btnText': 'mautic.core.open_link'|trans,
+                                'priority': 100
+                            }] %}
+
+                            {{ include('@MauticCore/Helper/list_actions.html.twig', {
+                                'item': item,
+                                'templateButtons': {
+                                    'edit': edit,
+                                    'clone': permissions['entity:entities:create'],
+                                    'delete': securityHasEntityAccess(
+                                        permissions['entity:entities:deleteown'],
+                                        permissions['entity:entities:deleteother'],
+                                        item.getCreatedBy()
+                                    ),
+                                },
+                                'routeBase': 'entity',
+                                'customButtons': customButtons,
+                            }) }}
+                        </td>
+                        <td>
+                            <div>
+                                {{ include('@MauticCore/Helper/publishstatus_icon.html.twig', {
+                                    'item': item,
+                                    'model': 'entity',
+                                }) }}
+                                <a href="{{ path('mautic_entity_action', {'objectAction': 'view', 'objectId': item.getId()}) }}"
+                                   data-toggle="ajax">
+                                    {{ item.getName() }}
+
+                                    {# Icon badges #}
+                                    {% if item.hasVariants() %}
+                                        <span data-toggle="tooltip" title="{{ 'mautic.entity.icon_tooltip.variant'|trans }}">
+                                            <i class="ri-fw ri-organization-chart fs-14"></i>
+                                        </span>
+                                    {% endif %}
+
+                                    {{ customContent('entity.name', mauticTemplateVars) }}
+                                </a>
+                                {{ include('@MauticProject/Modules/projects.html.twig') }}
+                            </div>
+                            {% if item.getDescription() is not empty %}
+                                <div class="text-secondary mt-4">
+                                    <small>{{ item.getDescription()|purify }}</small>
+                                </div>
+                            {% endif %}
+                        </td>
+                        <td class="visible-md visible-lg">
+                            {{ include('@MauticCore/Modules/category--expanded.html.twig', {'category': item.category}) }}
+                        </td>
+                        <td class="visible-sm visible-md visible-lg col-stats" data-stats="{{ item.getId() }}">
+                            {{ customContent('entity.stats.above', mauticTemplateVars) }}
+
+                            {# Stats badges #}
+                            <span class="mt-xs label label-blue" id="count-{{ item.getId() }}">
+                                <i class="ri-user-line"></i>
+                                <a href="{{ path('mautic_contact_index', {'search': 'entity:' ~ item.getId()}) }}"
+                                   data-toggle="tooltip"
+                                   title="{{ 'mautic.entity.stat.tooltip'|trans }}">
+                                    {{ 'mautic.entity.stat.count'|trans({'%count%': item.getCount()}) }}
+                                </a>
+                            </span>
+
+                            {{ customContent('entity.stats', mauticTemplateVars) }}
+                            {{ customContent('entity.stats.below', mauticTemplateVars) }}
+                        </td>
+                        <td class="visible-lg" title="{{ item.getDateModified() ? dateToFullConcat(item.getDateModified()) : '' }}">
+                            {{ item.getDateModified() ? dateToDate(item.getDateModified()) : '' }}
+                        </td>
+                        <td class="visible-md visible-lg">{{ item.getId() }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="panel-footer">
+        {{ include('@MauticCore/Helper/pagination.html.twig', {
+            'totalItems': totalItems,
+            'page': page,
+            'limit': limit,
+            'baseUrl': path('mautic_entity_index'),
+            'sessionVar': 'entity',
+        }) }}
+    </div>
+{% else %}
+    {% if searchValue is not empty %}
+        {{ include('@MauticCore/Helper/noresults.html.twig') }}
+    {% else %}
+        <div class="mt-80 col-md-offset-2 col-lg-offset-3 col-md-8 col-lg-5 height-auto">
+            {% set childContainer %}
+                <div class="mt-32 mb-md">
+                    {% include '@MauticCore/Components/pictogram.html.twig' with {
+                        'pictogram': 'document',
+                        'size': '80'
+                    } %}
+                </div>
+            {% endset %}
+
+            {{ include('@MauticCore/Components/content-block.html.twig', {
+                heading: 'mautic.entity.contentblock.heading',
+                subheading: 'mautic.entity.contentblock.subheading',
+                copy: 'mautic.entity.contentblock.copy',
+                childContainer: childContainer,
+            }) }}
+        </div>
+    {% endif %}
+{% endif %}

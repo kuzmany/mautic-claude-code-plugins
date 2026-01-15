@@ -1,0 +1,218 @@
+{#
+    Example: Complete list page template
+    File: app/bundles/EntityBundle/Resources/views/Entity/list.html.twig
+#}
+
+{% set isIndex = tmpl == 'index' ? true : false %}
+{% set tmpl = 'list' %}
+
+{% extends isIndex ? '@MauticCore/Default/content.html.twig' : '@MauticCore/Default/raw_output.html.twig' %}
+
+{% block mauticContent %}entity{% endblock %}
+{% block headerTitle %}{{ 'mautic.entity.entities'|trans }}{% endblock %}
+
+{% block content %}
+{% if isIndex %}
+    <div id="page-list-wrapper" class="{% if items|length > 0 or searchValue is not empty %}panel {% endif %}panel-default">
+
+        {{ include('@MauticCore/Helper/list_toolbar.html.twig', {
+            'searchValue': searchValue,
+            'action': currentRoute,
+            'page_actions': {
+                'templateButtons': {
+                    'new': permissions['entity:entities:create'],
+                },
+                'routeBase': 'entity',
+                'langVar': 'entity.entities',
+            },
+            'bulk_actions': {
+                'routeBase': 'entity',
+                'templateButtons': {
+                    'delete': permissions['entity:entities:deleteown'] or permissions['entity:entities:deleteother']
+                }
+            },
+            'quickFilters': [
+                {
+                    'search': 'mautic.core.searchcommand.ispublished',
+                    'label': 'mautic.core.form.active',
+                    'tooltip': 'mautic.core.searchcommand.ispublished.description',
+                    'icon': 'ri-check-line'
+                },
+                {
+                    'search': 'mautic.core.searchcommand.isunpublished',
+                    'label': 'mautic.core.form.inactive',
+                    'tooltip': 'mautic.core.searchcommand.isunpublished.description',
+                    'icon': 'ri-close-line'
+                },
+                {
+                    'search': 'mautic.core.searchcommand.isuncategorized',
+                    'label': 'mautic.core.form.uncategorized',
+                    'tooltip': 'mautic.core.searchcommand.isuncategorized.description',
+                    'icon': 'ri-folder-unknow-line'
+                },
+                {
+                    'search': 'mautic.core.searchcommand.ismine',
+                    'label': 'mautic.core.searchcommand.ismine.label',
+                    'tooltip': 'mautic.core.searchcommand.ismine.description',
+                    'icon': 'ri-user-line'
+                }
+            ]
+        }) }}
+
+        <div class="page-list">
+            {{ customContent('content.above', _context) }}
+{% endif %}
+
+{% if items|length > 0 %}
+    <div class="table-responsive">
+        <table class="table table-hover entity-list" id="entityTable">
+            <thead>
+                <tr>
+                    {{ include('@MauticCore/Helper/tableheader.html.twig', {
+                        'checkall': 'true',
+                        'target': '#entityTable',
+                    }) }}
+
+                    {{ include('@MauticCore/Helper/tableheader.html.twig', {
+                        'sessionVar': 'entity',
+                        'orderBy': 'e.name',
+                        'text': 'mautic.core.name',
+                        'class': 'col-entity-name',
+                    }) }}
+
+                    {{ include('@MauticCore/Helper/tableheader.html.twig', {
+                        'sessionVar': 'entity',
+                        'orderBy': 'cat.title',
+                        'text': 'mautic.core.category',
+                        'class': 'visible-md visible-lg col-entity-category',
+                    }) }}
+
+                    {{ include('@MauticCore/Helper/tableheader.html.twig', {
+                        'sessionVar': 'entity',
+                        'orderBy': 'e.dateAdded',
+                        'text': 'mautic.lead.import.label.dateAdded',
+                        'class': 'visible-md visible-lg col-entity-dateAdded',
+                    }) }}
+
+                    {{ include('@MauticCore/Helper/tableheader.html.twig', {
+                        'sessionVar': 'entity',
+                        'orderBy': 'e.dateModified',
+                        'text': 'mautic.lead.import.label.dateModified',
+                        'class': 'visible-md visible-lg col-entity-dateModified',
+                        'default': true,
+                    }) }}
+
+                    {{ include('@MauticCore/Helper/tableheader.html.twig', {
+                        'sessionVar': 'entity',
+                        'orderBy': 'e.createdByUser',
+                        'text': 'mautic.core.createdby',
+                        'class': 'visible-md visible-lg col-entity-createdByUser',
+                    }) }}
+
+                    {{ include('@MauticCore/Helper/tableheader.html.twig', {
+                        'sessionVar': 'entity',
+                        'orderBy': 'e.id',
+                        'text': 'mautic.core.id',
+                        'class': 'visible-md visible-lg col-entity-id',
+                    }) }}
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                    <tr>
+                        <td>
+                            {{ include('@MauticCore/Helper/list_actions.html.twig', {
+                                'item': item,
+                                'templateButtons': {
+                                    'edit': securityHasEntityAccess(
+                                        permissions['entity:entities:editown'],
+                                        permissions['entity:entities:editother'],
+                                        item.createdBy
+                                    ),
+                                    'clone': permissions['entity:entities:create'],
+                                    'delete': securityHasEntityAccess(
+                                        permissions['entity:entities:deleteown'],
+                                        permissions['entity:entities:deleteother'],
+                                        item.createdBy
+                                    ),
+                                },
+                                'routeBase': 'entity',
+                            }) }}
+                        </td>
+                        <td>
+                            <div>
+                                {{ include('@MauticCore/Helper/publishstatus_icon.html.twig', {
+                                    'item': item,
+                                    'model': 'entity',
+                                }) }}
+                                <a href="{{ path('mautic_entity_action', {'objectAction': 'view', 'objectId': item.id}) }}"
+                                   data-toggle="ajax">
+                                    {{ item.name }}
+                                    {{ customContent('entity.name', _context|merge({'item': item})) }}
+                                </a>
+                                {{ include('@MauticProject/Modules/projects.html.twig') }}
+                            </div>
+                            {{ include('@MauticCore/Helper/description--inline.html.twig', {
+                                'description': item.description
+                            }) }}
+                        </td>
+                        <td class="visible-md visible-lg">
+                            {{ include('@MauticCore/Modules/category--expanded.html.twig', {'category': item.category}) }}
+                        </td>
+                        <td class="visible-md visible-lg" title="{{ item.dateAdded ? dateToFullConcat(item.dateAdded) : '' }}">
+                            {{ item.dateAdded ? dateToDate(item.dateAdded) : '' }}
+                        </td>
+                        <td class="visible-md visible-lg" title="{{ item.dateModified ? dateToFullConcat(item.dateModified) : '' }}">
+                            {{ item.dateModified ? dateToDate(item.dateModified) : '' }}
+                        </td>
+                        <td class="visible-md visible-lg">{{ item.createdByUser }}</td>
+                        <td class="visible-md visible-lg">{{ item.id }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="panel-footer">
+        {{ include('@MauticCore/Helper/pagination.html.twig', {
+            'totalItems': items|length,
+            'page': page,
+            'limit': limit,
+            'menuLinkId': 'mautic_entity_index',
+            'baseUrl': path('mautic_entity_index'),
+            'sessionVar': 'entity',
+        }) }}
+    </div>
+{% else %}
+    {% if searchValue is not empty %}
+        {{ include('@MauticCore/Helper/noresults.html.twig', {'tip': 'mautic.entity.noresults.tip'}) }}
+    {% else %}
+        <div class="mt-80 col-md-offset-2 col-lg-offset-3 col-md-8 col-lg-5 height-auto">
+            {% set childContainer %}
+                <div class="mt-32 mb-md">
+                    {% include '@MauticCore/Components/pictogram.html.twig' with {
+                        'pictogram': 'document',
+                        'size': '80'
+                    } %}
+                </div>
+            {% endset %}
+
+            {{ include('@MauticCore/Components/content-block.html.twig', {
+                heading: 'mautic.entity.contentblock.heading',
+                subheading: 'mautic.entity.contentblock.subheading',
+                copy: 'mautic.entity.contentblock.copy',
+                childContainer: childContainer,
+            }) }}
+        </div>
+    {% endif %}
+{% endif %}
+
+{% if isIndex %}
+            {{ customContent('content.below', _context) }}
+        </div>
+    </div>
+
+    {{ include('@MauticCore/Modules/protip.html.twig', {
+        tip: random(['mautic.protip.entity.tip1', 'mautic.protip.entity.tip2'])
+    }) }}
+{% endif %}
+{% endblock %}
