@@ -166,9 +166,13 @@ do_load() {
         exit 1
     fi
 
-    echo "export MAUTIC_BASE_URL='${base_url}'"
+    # Escape single quotes in values to prevent command injection when eval'd
+    local esc_base_url="${base_url//\'/\'\\\'\'}"
+    local esc_name="${name//\'/\'\\\'\'}"
+
+    echo "export MAUTIC_BASE_URL='${esc_base_url}'"
     echo "export MAUTIC_AUTH_TYPE='${auth_type}'"
-    echo "export MAUTIC_PROFILE='${name}'"
+    echo "export MAUTIC_PROFILE='${esc_name}'"
 
     case "$auth_type" in
         oauth2)
@@ -179,8 +183,10 @@ do_load() {
                 echo "ERROR: Profile '$name' (oauth2) missing:$missing" >&2
                 exit 1
             fi
-            echo "export MAUTIC_CLIENT_ID='${client_id}'"
-            echo "export MAUTIC_CLIENT_SECRET='${client_secret}'"
+            local esc_client_id="${client_id//\'/\'\\\'\'}"
+            local esc_client_secret="${client_secret//\'/\'\\\'\'}"
+            echo "export MAUTIC_CLIENT_ID='${esc_client_id}'"
+            echo "export MAUTIC_CLIENT_SECRET='${esc_client_secret}'"
             # Clear basic auth vars
             echo "unset MAUTIC_USERNAME 2>/dev/null; true"
             echo "unset MAUTIC_PASSWORD 2>/dev/null; true"
@@ -193,8 +199,10 @@ do_load() {
                 echo "ERROR: Profile '$name' (basic) missing:$missing" >&2
                 exit 1
             fi
-            echo "export MAUTIC_USERNAME='${username}'"
-            echo "export MAUTIC_PASSWORD='${password}'"
+            local esc_username="${username//\'/\'\\\'\'}"
+            local esc_password="${password//\'/\'\\\'\'}"
+            echo "export MAUTIC_USERNAME='${esc_username}'"
+            echo "export MAUTIC_PASSWORD='${esc_password}'"
             # Clear oauth2 vars
             echo "unset MAUTIC_CLIENT_ID 2>/dev/null; true"
             echo "unset MAUTIC_CLIENT_SECRET 2>/dev/null; true"
@@ -292,6 +300,7 @@ do_edit() {
     # Rewrite file with updated value
     local tmpfile
     tmpfile=$(mktemp)
+    trap 'rm -f "$tmpfile"' EXIT
     local in_section=false replaced=false
     while IFS= read -r line || [ -n "$line" ]; do
         if [[ "$line" =~ ^\[([^]]+)\] ]]; then
@@ -311,6 +320,7 @@ do_edit() {
     if ! $replaced; then
         local tmpfile2
         tmpfile2=$(mktemp)
+        trap 'rm -f "$tmpfile" "$tmpfile2"' EXIT
         in_section=false
         local inserted=false
         while IFS= read -r line || [ -n "$line" ]; do
@@ -346,6 +356,7 @@ do_remove() {
 
     local tmpfile
     tmpfile=$(mktemp)
+    trap 'rm -f "$tmpfile"' EXIT
     local in_section=false skip_blanks=false
     while IFS= read -r line || [ -n "$line" ]; do
         if [[ "$line" =~ ^\[([^]]+)\] ]]; then
