@@ -1,5 +1,5 @@
 ---
-name: Mautic JavaScript Development
+name: mautic-js
 description: This skill should be used when the user asks to "write Mautic JavaScript", "create bundle JS", "add JavaScript to plugin", "mQuery", "Mautic.ajaxActionRequest", "bundle OnLoad", "OnLoad function", "chosen select", "Mautic modal", "loading indicator". Provides guide for writing JavaScript in Mautic bundles and plugins.
 version: 1.1.0
 ---

@@ -1,5 +1,5 @@
 ---
-name: Mautic Charts & Graphs
+name: mautic-graphs
 description: This skill should be used when the user asks to "add chart", "create graph", "line chart", "bar chart", "pie chart", "dashboard widget chart", "Chart.js Mautic", "renderCharts", "LineChart", "stats graph". Provides guide for implementing charts in Mautic using Chart.js.
 version: 1.0.0
 ---
@@ -170,3 +170,62 @@ public function viewAction($objectId): Response
     ]);
 }
 ```
+
+## Chart Customization
+
+### Time Units for LineChart
+
+The `$unit` parameter controls x-axis grouping:
+
+| Unit | Value | Use case |
+|------|-------|----------|
+| Hourly | `'H'` | Last 24 hours |
+| Daily | `'D'` | Last 30 days |
+| Weekly | `'W'` | Last few months |
+| Monthly | `'M'` | Year overview |
+| Yearly | `'Y'` | Multi-year trends |
+
+### Multiple Datasets
+
+```php
+$chart = new LineChart('D', $dateFrom, $dateTo);
+$chart->setDataset($this->translator->trans('mautic.email.sent'), $sentData);
+$chart->setDataset($this->translator->trans('mautic.email.read'), $readData);
+$chart->setDataset($this->translator->trans('mautic.email.failed'), $failedData);
+// Colors are auto-assigned from Mautic's default palette
+```
+
+### Chart Lifecycle in JavaScript
+
+```javascript
+// Destroy existing chart before re-rendering (prevents memory leaks)
+if (window.myChart instanceof Chart) {
+    window.myChart.destroy();
+}
+
+// Re-render after AJAX content update
+Mautic.renderCharts('#updated-container');
+```
+
+### Responsive Chart Sizing
+
+Charts auto-resize with their container. Control dimensions via the parent element:
+
+```twig
+<div style="height: 300px; position: relative;">
+    {{ include('@MauticCore/Helper/chart.html.twig', {
+        'chartData': stats,
+        'chartType': 'line',
+        'chartHeight': 300
+    }) }}
+</div>
+```
+
+## Integration with Dashboard Widgets
+
+Charts are commonly used inside dashboard widgets. The **mautic-dashboard-widgets** skill covers how to create widget subscribers that serve chart data. The typical flow:
+
+1. Widget subscriber generates chart data using PHP helpers (LineChart, PieChart, BarChart)
+2. Sets template to `@MauticCore/Helper/chart.html.twig`
+3. Dashboard renders the chart via Twig include
+4. `Mautic.renderCharts()` initializes Chart.js on page load

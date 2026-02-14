@@ -1,5 +1,5 @@
 ---
-name: Mautic Tables
+name: mautic-tables
 description: This skill should be used when the user asks to "add table", "create list view", "list page table", "detail table", "tableheader", "list_actions", "pagination", "sortable columns", "table row actions", "entity list", "column width", "table column", or mentions Twig table templates. Provides guide for implementing tables in Mautic admin UI.
 version: 1.0.0
 ---

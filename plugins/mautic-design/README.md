@@ -14,6 +14,16 @@ Chart and graph implementation guide for Mautic. Covers:
 
 **Trigger phrases:** "add chart", "create graph", "line chart", "bar chart", "pie chart", "dashboard widget chart", "renderCharts"
 
+### mautic-tables
+Table implementation guide for Mautic admin UI. Covers:
+- List view tables with sortable columns and pagination
+- Detail page tables
+- Key helper components (tableheader, list_actions)
+- Custom row actions and cell patterns
+- Responsive classes and column widths
+
+**Trigger phrases:** "add table", "create list view", "tableheader", "list_actions", "pagination", "sortable columns", "entity list"
+
 ## Status
 
 This plugin is under active development.
